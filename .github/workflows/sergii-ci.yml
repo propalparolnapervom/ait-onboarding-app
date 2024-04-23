@@ -36,6 +36,8 @@ jobs:
         docker build -t ${DOCKER_USER}/ait-onboarding-app:${IMG_TAG} .
         
     - name: Push the image
+      env:
+         DOCKER_USER: ${{ secrets.XBS_DOCKERHUB_USERNAME }}
       run: |
         IMG_TAG=`cat VERSION`
         docker push ${DOCKER_USER}/ait-onboarding-app:${IMG_TAG}
