@@ -8,12 +8,12 @@ on:
 
 jobs:
 
-  # test:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - name: Some tests
-  #     run: echo "Add some tests here"
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Some tests
+      run: echo "Add some tests here eventually ..."
 
   build-push-docker-image:
     runs-on: ubuntu-latest
