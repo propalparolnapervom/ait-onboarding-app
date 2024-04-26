@@ -47,3 +47,29 @@ jobs:
         IMG_FULL_NAME="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_NAME }}:${IMG_TAG}"
         docker build -t ${IMG_FULL_NAME} .
         docker push ${IMG_FULL_NAME}
+        # Configure the env var, so it can be used on the next GA steps
+        echo "IMG_TAG=${IMG_TAG}" >> "$GITHUB_ENV"
+    - name: Update the CD repo to trigger deployment
+      env:
+        DEPLOY_KEY: ${{ secrets.PRIV_SSH_KEY_BITBUCKET }}
+        CD_REPO: "git@bitbucket.org:automatitdevops/sergiib-skel.git"
+        HELM_VALUES_F: "argocd/ait-onboarding-app/app-env/dev-values.yaml" # Relative to the CD_REPO repo
+      run: |
+        # Setup SSH for Bitbucket
+        mkdir -p ~/.ssh
+        echo "$DEPLOY_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan bitbucket.org >> ~/.ssh/known_hosts
+        
+        # Clone CD repo
+        git clone ${CD_REPO}
+        
+        # Update Helm chart with new image tag
+        sed -i -e "s/tag: \".*\"/tag: \"${IMG_TAG}\"/" ${HELM_VALUES_F}
+        
+        # Commit and push changes
+        git config user.name 'GitHub Actions'
+        git config user.email 'actions@github.com'
+        git add ${HELM_VALUES_F}
+        git commit -m "Update image tag to ${IMG_TAG}"
+        git push origin main
