@@ -7,27 +7,26 @@ on:
     branches:
       - main
 
+
 env:
   AWS_ECR_NAME : "ait_onboarding_app"
   AWS_ROLE_TO_ASSUME_ARN: "arn:aws:iam::058264257313:role/ait-onboarding-app-github-ecr-access"
   AWS_REGION: "eu-west-1"
   AWS_ACCOUNT: "058264257313"
 
-permissions:
-  id-token: write   # This is required for requesting the JWT
-  contents: read    # This is required for actions/checkout
 
 jobs:
-    
   test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Some tests
       run: echo "Add some tests here eventually ..."
-
   build-push-docker-image:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v3
@@ -37,14 +36,16 @@ jobs:
         role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_ARN }}
         role-session-name: github-ecr-session
         aws-region: ${{ env.AWS_REGION }}
-    - name: Build the image
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
+      with:
+        registries: ${{ env.AWS_ACCOUNT }}
+        mask-password: "true" # see: https://github.com/aws-actions/amazon-ecr-login#docker-credentials          
+    - name: Build, tag, and push docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
         IMG_TAG=`cat VERSION`
         IMG_FULL_NAME="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_NAME }}:${IMG_TAG}"
         docker build -t ${IMG_FULL_NAME} .
-        
-    - name: Push the image
-      run: |
-        IMG_TAG=`cat VERSION`
-        IMG_FULL_NAME="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_NAME }}:${IMG_TAG}"
         docker push ${IMG_FULL_NAME}
