@@ -63,6 +63,7 @@ jobs:
         
         # Clone CD repo
         git clone ${CD_REPO}
+        cd ${CD_REPO}
         
         # Update Helm chart with new image tag
         sed -i -e "s/tag: \".*\"/tag: \"${IMG_TAG}\"/" ${HELM_VALUES_F}
