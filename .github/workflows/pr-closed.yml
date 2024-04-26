@@ -42,8 +42,6 @@ jobs:
         registries: ${{ env.AWS_ACCOUNT }}
         mask-password: "true" # see: https://github.com/aws-actions/amazon-ecr-login#docker-credentials          
     - name: Build, tag, and push docker image to Amazon ECR
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       run: |
         IMG_TAG=`cat VERSION`
         IMG_FULL_NAME="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_NAME }}:${IMG_TAG}"
