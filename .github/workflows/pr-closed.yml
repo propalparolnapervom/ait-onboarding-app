@@ -7,8 +7,18 @@ on:
     branches:
       - main
 
-jobs:
+env:
+  AWS_ECR_NAME : "ait_onboarding_app"
+  AWS_ROLE_TO_ASSUME_ARN: "arn:aws:iam::058264257313:role/ait-onboarding-app-github-ecr-access"
+  AWS_REGION: "eu-west-1"
+  AWS_ACCOUNT: "058264257313"
 
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+jobs:
+    
   test:
     runs-on: ubuntu-latest
     steps:
@@ -21,24 +31,20 @@ jobs:
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v3
-      
-    - name: Docker Login
-      env:
-         DOCKER_USER: ${{ secrets.XBS_DOCKERHUB_USERNAME }}
-         DOCKER_PWD: ${{ secrets.XBS_DOCKERHUB_PASSWORD }}
-      run: |
-        docker login -u ${DOCKER_USER} -p ${DOCKER_PWD}
-        
+    - name: Configure AWS creds to access ECR
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME_ARN }}
+        role-session-name: github-ecr-session
+        aws-region: ${{ env.AWS_REGION }}
     - name: Build the image
-      env:
-         DOCKER_USER: ${{ secrets.XBS_DOCKERHUB_USERNAME }}
       run: |
         IMG_TAG=`cat VERSION`
-        docker build -t ${DOCKER_USER}/ait-onboarding-app:${IMG_TAG} .
+        IMG_FULL_NAME="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_NAME }}:${IMG_TAG}"
+        docker build -t ${IMG_FULL_NAME} .
         
     - name: Push the image
-      env:
-         DOCKER_USER: ${{ secrets.XBS_DOCKERHUB_USERNAME }}
       run: |
         IMG_TAG=`cat VERSION`
-        docker push ${DOCKER_USER}/ait-onboarding-app:${IMG_TAG}
+        IMG_FULL_NAME="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_NAME }}:${IMG_TAG}"
+        docker push ${IMG_FULL_NAME}
