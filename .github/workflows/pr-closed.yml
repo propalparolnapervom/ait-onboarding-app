@@ -52,8 +52,9 @@ jobs:
     - name: Update the CD repo to trigger deployment
       env:
         DEPLOY_KEY: ${{ secrets.PRIV_SSH_KEY_BITBUCKET }}
-        CD_REPO: "git@bitbucket.org:automatitdevops/sergiib-skel.git"
-        HELM_VALUES_F: "argocd/ait-onboarding-app/app-env/dev-values.yaml" # Relative to the CD_REPO repo
+        CD_REPO_URL: "git@bitbucket.org:automatitdevops/sergiib-skel.git"
+        CD_REPO_NAME: "sergiib-skel"
+        HELM_VALUES_F: "argocd/ait-onboarding-app/app-env/dev-values.yaml" # Relative to the CD_REPO_NAME repo
       run: |
         # Setup SSH for Bitbucket
         mkdir -p ~/.ssh
@@ -62,8 +63,8 @@ jobs:
         ssh-keyscan bitbucket.org >> ~/.ssh/known_hosts
         
         # Clone CD repo
-        git clone ${CD_REPO}
-        cd ${CD_REPO}
+        git clone ${CD_REPO_URL}
+        cd ${CD_REPO_NAME}
         
         # Update Helm chart with new image tag
         sed -i -e "s/tag: \".*\"/tag: \"${IMG_TAG}\"/" ${HELM_VALUES_F}
