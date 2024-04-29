@@ -30,6 +30,11 @@ jobs:
     steps:
     - name: Checkout the repo
       uses: actions/checkout@v3
+    - name: Install buildx
+      id: buildx
+      uses: crazy-max/ghaction-docker-buildx@v1
+      with:
+        version: latest
     - name: Configure AWS creds to access ECR
       uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -45,7 +50,9 @@ jobs:
       run: |
         IMG_TAG=`cat VERSION`
         IMG_FULL_NAME="${{ env.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_NAME }}:${IMG_TAG}"
-        docker build -t ${IMG_FULL_NAME} .
+        docker buildx build \
+        -t ${IMG_FULL_NAME} \
+        --platform linux/amd64,linux/arm64 .
         docker push ${IMG_FULL_NAME}
         # Configure the env var, so it can be used on the next GA steps
         echo "IMG_TAG=${IMG_TAG}" >> "$GITHUB_ENV"
